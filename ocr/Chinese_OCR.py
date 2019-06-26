@@ -4,7 +4,7 @@
 # top 1 accuracy 0.99826 top 5 accuracy 0.99989
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import random
 import tensorflow.contrib.slim as slim
 import time
@@ -48,7 +48,7 @@ tf.app.flags.DEFINE_boolean('epoch', 1, 'Number of epoches')
 tf.app.flags.DEFINE_integer('batch_size', 128, 'Validation batch size')
 tf.app.flags.DEFINE_string('mode', 'validation', 'Running mode. One of {"train", "valid", "test"}')
 
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.6)
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -108,7 +108,7 @@ def build_graph(top_k):
     images = tf.placeholder(dtype=tf.float32, shape=[None, 64, 64, 1], name='image_batch')
     labels = tf.placeholder(dtype=tf.int64, shape=[None], name='label_batch')
     is_training = tf.placeholder(dtype=tf.bool, shape=[], name='train_flag')
-    with tf.device('/gpu:5'):
+    with tf.device('/gpu:0'):
         # network: conv2d->max_pool2d->conv2d->max_pool2d->conv2d->max_pool2d->conv2d->conv2d->
         # max_pool2d->fully_connected->fully_connected
         #给slim.conv2d和slim.fully_connected准备了默认参数：batch_norm
@@ -134,10 +134,10 @@ def build_graph(top_k):
         loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
         accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(logits, 1), labels), tf.float32))
 
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        if update_ops:
-            updates = tf.group(*update_ops)
-            loss = control_flow_ops.with_dependencies([updates], loss)
+        #update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        #if update_ops:
+        #    updates = tf.group(*update_ops)
+        #   loss = control_flow_ops.with_dependencies([updates], loss)
 
         global_step = tf.get_variable("step", [], initializer=tf.constant_initializer(0.0), trainable=False)
         optimizer = tf.train.AdamOptimizer(learning_rate=0.1)
